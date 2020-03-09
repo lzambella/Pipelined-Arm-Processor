@@ -30,23 +30,7 @@ module EX_PIPE(
     output reg MEMREAD_OUT
 );
 
-  always @( posedge CLK or posedge RESET) begin
-        if(RESET) begin
-            ZeroBranch_out <= 0;
-            UnconBranch_out <= 0;
-  	        memRead_out <= 0;
- 	        memWrite_out <= 0;
-
-            regWrite_out <= 0;
-  	        mem2Reg_out <= 0;
-
-            shifted_PC_out <= 0;
-            alu_zero_out <= 0;
-            alu_result_out <= 0;
-            write_data_mem_out <= 0;
-            write_reg_out <= 0;
-    end
-    else begin
+  always @( posedge CLK) begin
             BRANCH_OUT        <= BRANCH;
             ALU_VAL_OUT         <= ALU_VAL;
             RT_READ_OUT         <= RT_READ;
@@ -58,8 +42,6 @@ module EX_PIPE(
             MEMREAD_OUT <= MEMREAD_IN;
             MEMWRITE_OUT <= MEMWRITE_IN;
             BRANCH_ZERO_OUT <= BRANCH_ZERO_IN;
-    end
-    
 end
 
 endmodule

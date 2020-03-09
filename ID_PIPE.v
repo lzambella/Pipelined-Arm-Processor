@@ -10,6 +10,7 @@ module ID_PIPE(
     input RESET,
     input [31:0] signExtend_in,
     // Control inputs
+
     input reg2loc_in,
     input aluSrc_in,
     input memRead_in,

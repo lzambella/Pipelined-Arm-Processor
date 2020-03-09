@@ -6,11 +6,14 @@ module ARM_RISC(input clock,
                 input [31:0] pc,
                 output wire [63:0] mem_addr_input,       // Data memory read this value
                 output wire [63:0] write_data_input,     // Data memry read this value
-                output wire memory_write,                // Both of these are for setting the memory unit to read/write
+                output wire memory_write,                // These are for the MEM stage
                 output wire memory_read,
                 output wire [63:0] alu_res_debug,        // alu debug results
                 output wire ctrl_branch_out,             // comes from an AND of the cbz and ALU zero output
-                output wire [31:0] branch_pc_out            // always passed out, sometimes contains garbage
+                output wire [31:0] branch_pc_out,        // always passed out, sometimes contains garbage
+                // hazard PC control
+                output wire [31:0] hazard_pc_out,        // PC stall passed when there is a memory hazard
+                output wire        hazard_pc_write       // Enabler for stalling
                 );
 `define OPERATION_LDUR              'b11111000010
 `define OPERATION_STUR              'b11111000000
@@ -27,10 +30,25 @@ module ARM_RISC(input clock,
 wire [31:0] instruction_passthrough_a;
 wire [31:0] counter_out_id;
 // Control unit
-// memread and memwrite and internal wires and not related to the modules output
-// those outputs should be for the proper memory stage
-wire reg2loc, alu_src, mem2reg, branch, memRead, memWrite, regWrite;
-wire [1:0] alu_opcode;
+// For the ID stage
+
+  /*
+      from most significant to least significant (left to right)
+      8 -> reg2loc
+      7 -> aluOp[1]
+      6 -> aluOp[0]
+      5 -> aluSrc
+      4 -> branch
+      3 -> memRead
+      2 -> memWrite
+      1 -> regWrite
+      0 -> mem2reg
+  */
+
+wire [8:0] control_out_id;  // This gets fed into the data
+wire [8:0] control_stall_mux_out; // Either zeros or control_out_id
+
+
 
 // ID/EX specific datalines
 wire reg2loc_out_ex, aluSrc_out_ex, memRead_out_ex, memWrite_out_ex, regWrite_out_ex, mem2reg_out_ex, branch_out_ex;
@@ -40,6 +58,7 @@ wire [31:0] pc_out_ex;
 wire [10:0] aluCtrl_out_ex;
 wire [4:0] write_register_out_ex;   // Execute stage write_reg_out
 wire [63:0] signExtend_out_ex;
+wire [31:0] pc_out_id;
 
 // EX/MEM specific datalines
 wire regwrite_out_mem, mem2reg_out_mem, branch_out_mem;
@@ -58,22 +77,15 @@ wire [4:0] write_register_out_wb; // write register passthrough for MEM stage to
 wire [63:0] final_data; // Data from mux depends either on mem2reg
 
 
-Controller control(.Instruction(instruction_passthrough_a[31:21]), // Second stage instruction passthrough
-                   .reg2loc(reg2loc),
-                   .aluOp(alu_opcode),
-                   .aluSrc(alu_src),
-                   .memRead(memRead),
-                   .memWrite(memWrite),
-                   .mem2reg(mem2reg),
-                   .regWrite(regWrite),
-                   .branch(branch)
+Controller control(.Instruction(instruction_passthrough_a[31:21]), // Second stage instruction passthroug
+                   .control_out(control_out_id)
                    );
 
 
 // Register unit
 wire [4:0] read_register_a, read_register_b;
 assign read_register_a = instruction_passthrough_a[9:5];  // Register input is always a subset of the instruction
-assign read_register_b = (reg2loc == 0) ? instruction_passthrough_a[20:16] : instruction_passthrough_a[4:0]; // This register input is dependent on a bit in the instruction
+assign read_register_b = (control_stall_mux_out[8] == 0) ? instruction_passthrough_a[20:16] : instruction_passthrough_a[4:0]; // This register input is dependent on a bit in the instruction
 wire [63:0] register_data_a, register_data_b;
 
 // -------- CPU components ---------
@@ -83,28 +95,15 @@ REG_MEM registers(.CLK(clock),
                   .READ_REG_B(read_register_b),
                   .DATA_OUT_A(register_data_a),
                   .DATA_OUT_B(register_data_b),
-                  // register write enable comes from stage 5
-                  // write register should come from stage 5
-                  // write data should come from stage 5
-                  // TODO:
                   .WRITE_REG(write_register_out_wb),
                   .WRITE_DATA(final_data), // from stage 5 mux output
                   .REG_WRITE_ENABLE(regWrite_out_wb)
                   );
 
 // ALU inputs are got from stage 3 inputs/outputs
-
-// aluscr mux
 // sets whether alu src comes from read register or memory offset location depending on the instruction (instruction[20:12])
 reg [63:0] alusrc_mux;
-always @(*) begin
-    // check in third stage EX is ldur or r type
-    if(signExtend_out_ex[31:21] == `OPERATION_LDUR || signExtend_out_ex[31:21] == `OPERATION_STUR) begin
-        alusrc_mux <= signExtend_out_ex[20:12];
-    end else begin
-        alusrc_mux <= reg_data_b_out_ex;
-    end
-end
+
 ALU alu(.A(reg_data_a_out_ex),
         .B(alusrc_mux),     // see above for details
         .C(aluCtrl_out_ex), // the instruction
@@ -124,21 +123,29 @@ INSTR_PIPE pipe_a(.CLK(clock),
 
 // ID/EX
 ID_PIPE pipe_b(.CLK(clock),
-                .reg2loc_in(reg2loc),
-                .aluSrc_in(alu_src),
-                .memRead_in(memRead),
-                .memWrite_in(memWrite),
-                .regWrite_in(regWrite),
-                .mem2reg_in(mem2reg),
-                .branch_in(branch),
-                .aluOp_in(alu_opcode),
+                // From the stall MUX output
+                .reg2loc_in(control_stall_mux_out[8]),
+                .aluOp_in(control_stall_mux_out[7:6]),
+                .aluSrc_in(control_stall_mux_out[5]),
+                .branch_in(control_stall_mux_out[4]),
+                .memRead_in(control_stall_mux_out[3]),
+                .memWrite_in(control_stall_mux_out[2]),
+                .regWrite_in(control_stall_mux_out[1]),
+                .mem2reg_in(control_stall_mux_out[0]),
+                
+                // Register data
                 .register_data_a_in(register_data_a),
                 .register_data_b_in(register_data_b),
-                .pc_in(pc_out_id),    // TODO:
+
+                // Program counter (for branching)
+                .pc_in(pc_out_id),
+                
                 .aluControl_in(instruction_passthrough_a[31:21]), // This is the instruction
                 .write_register_in(instruction_passthrough_a[4:0]),
+
                 .signExtend_in(instruction_passthrough_a), // passes the entire instruction
-                // Outputs go to specific stage wires
+                
+                // Outputs
                 .reg2loc_out(reg2loc_out_ex),
                 .aluSrc_out(aluSrc_out_ex),
                 .memRead_out(memRead_out_ex),
@@ -190,7 +197,7 @@ EX_PIPE pipe_c(.CLK(clock),
 // MW/WB
 MEM_PIPE pipe_d(.CLK(clock),
                 .RESET(reset),
-                // These are from the outputs
+                
                 .MEM_DATA(writeback_data), // gets data from mem unit output
                 .ALU_VAL(alu_res_out), // from previous stage
                 .REG_DESTINATION(write_register_out_mem),
@@ -203,6 +210,33 @@ MEM_PIPE pipe_d(.CLK(clock),
                 .MEM2REG_OUT(mem2reg_out_wb),
                 .ALU_VAL_OUT(alu_res_out_wb)
                 );
+
+// MUX selector to either stall or pass control lines in the ID stage
+wire stall;
+
+stall_unit staller(.Rd_ex(write_register_out_ex),
+                   .Rm_id(read_register_a),
+                   .Rn_id(read_register_b),
+                   .PC_id(pc_out_id),
+                   .memRead_ex(memRead_out_ex),
+                   
+                   .stall_id(stall),
+                   .PC_if(hazard_pc_out),
+                   .PC_write(hazard_pc_write));
+
+
+always @(*) begin
+    // check in third stage EX is ldur or r type
+    if(signExtend_out_ex[31:21] == `OPERATION_LDUR || signExtend_out_ex[31:21] == `OPERATION_STUR) begin
+        alusrc_mux <= signExtend_out_ex[20:12];
+    end else begin
+        alusrc_mux <= reg_data_b_out_ex;
+    end
+end
+
+// This mux is for stalling during ldur and stur instructions
+assign control_stall_mux_out = (stall == 1) ? 9'b0 : control_out_id;
+
 assign alu_res_debug = alu_res_out_wb; // for debugging, this should be from the last stage
 assign final_data = (mem2reg_out_wb == 0) ? alu_res_out_wb : memory_write_data_out; // writeback gets either read memory or alu result
 endmodule

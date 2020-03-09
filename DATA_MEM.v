@@ -33,7 +33,7 @@ module DATA_MEM(
         
         initial begin
             $monitor("Time: %d Data_mem[0]: %h", $time, DATA_MEMORY[0]);
-            DATA_MEMORY[0] = 'h0005;
-            DATA_MEMORY[1] = 'h0003;           
+            DATA_MEMORY[0] = 'h0015;
+            DATA_MEMORY[1] = 'h00C4;           
         end
 endmodule

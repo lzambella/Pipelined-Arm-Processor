@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 
 module cpu_testbench();
+
 reg clock;
 wire memWrite;
 wire memRead;
@@ -16,6 +17,10 @@ reg [31:0] pc;
 wire [31:0] pc_branch;
 wire pc_src;
 wire [31:0] pc_mux_out; // mux output for pc_src. for branching
+
+wire [31:0] pc_stall;   // for stalling
+wire stall_enable;      // for staling
+
 // Data memory
 DATA_MEM memory(.CLK(clock),
                 .MEM_WRITE(memWrite),
@@ -41,7 +46,9 @@ ARM_RISC cpu(.clock(clock),
         .memory_read(memRead),
         .alu_res_debug(alu_res),
         .ctrl_branch_out(pc_src),
-        .branch_pc_out(pc_branch)
+        .branch_pc_out(pc_branch),
+        .hazard_pc_out(pc_stall),
+        .hazard_pc_write(stall_enable)
         );
 
 always begin
@@ -52,8 +59,10 @@ end
 
 always @ (posedge clock) begin
     // increment program counter each clock cycle
-    // check if branch first,set counter to the branch address otherwise increment it
-    if (pc_src == 'b1) begin
+    // check if stall hazard first, then branch ,set counter to the appropriate PC
+    if (stall_enable) begin
+        pc <= pc_stall;
+    end else if (pc_src == 'b1) begin
         pc <= pc_branch;
     end else begin
         pc <= pc + 1;
@@ -63,8 +72,8 @@ initial begin
     $dumpvars(0);
     clock = 0;
     pc = 0;
-    //#1000
-    //$display("time: %d Finish sim", $time);
-    //$finish;
+    #1000
+    $display("time: %d Finish sim", $time);
+    $finish;
 end
 endmodule

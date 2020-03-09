@@ -10,3 +10,4 @@
 synthesis.ys
 *.bat
 *.pdf
+pipeline_testbench.v
