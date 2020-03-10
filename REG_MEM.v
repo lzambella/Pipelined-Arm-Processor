@@ -16,9 +16,20 @@ module REG_MEM(
     
         reg [63:0] REGISTER [31:0];      // 32 general purpose registers holding 64 bits each
         // Asyncronous read
-        always @ (*) begin        
-            DATA_OUT_B <= REGISTER[READ_REG_B];
-            DATA_OUT_A <= REGISTER[READ_REG_A];
+        always @ (*) begin
+            if (READ_REG_A == 'b0) begin
+                DATA_OUT_A <= 63'b0;
+            end else begin        
+                DATA_OUT_A <= REGISTER[READ_REG_A];
+                
+            end
+
+            if (READ_REG_B == 'b0) begin
+                DATA_OUT_B <= 63'b0;
+            end else begin
+                DATA_OUT_B <= REGISTER[READ_REG_B];
+            end
+            
         end
 
         // Syncronous write
@@ -30,10 +41,10 @@ module REG_MEM(
         // lets give some registers initial values
         initial begin
             //$monitor("Time %d val[0, 1, 2]: %h %h %h", $time, REGISTER[0], REGISTER[1], REGISTER[2]);
-            REGISTER[1] = 16'h000A;
-            REGISTER[2] = 16'h0005;
-            REGISTER[3] = 'h0000;
-            REGISTER[4] = 'h0000;
+            REGISTER[1] = 16'h0000;
+            REGISTER[2] = 16'h0000;
+            REGISTER[3] = 16'h0000;
+            REGISTER[4] = 16'h0000;
 
         end
 endmodule
