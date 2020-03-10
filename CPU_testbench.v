@@ -47,7 +47,6 @@ ARM_RISC cpu(.clock(clock),
         .alu_res_debug(alu_res),
         .ctrl_branch_out(pc_src),
         .branch_pc_out(pc_branch),
-        .hazard_pc_out(pc_stall),
         .hazard_pc_write(stall_enable)
         );
 
@@ -61,7 +60,7 @@ always @ (posedge clock) begin
     // increment program counter each clock cycle
     // check if stall hazard first, then branch ,set counter to the appropriate PC
     if (stall_enable) begin
-        pc <= pc_stall;
+        pc <= pc;
     end else if (pc_src == 'b1) begin
         pc <= pc_branch;
     end else begin
