@@ -12,7 +12,6 @@ module ARM_RISC(input clock,
                 output wire ctrl_branch_out,             // comes from an AND of the cbz and ALU zero output
                 output wire [31:0] branch_pc_out,        // always passed out, sometimes contains garbage
                 // hazard PC control
-                output wire [31:0] hazard_pc_out,        // PC stall passed when there is a memory hazard
                 output wire        hazard_pc_write       // Enabler for stalling
                 );
 `define OPERATION_LDUR              'b11111000010
@@ -221,7 +220,6 @@ stall_unit staller(.Rd_ex(write_register_out_ex),
                    .memRead_ex(memRead_out_ex),
                    
                    .stall_id(stall),
-                   .PC_if(hazard_pc_out),
                    .PC_write(hazard_pc_write));
 
 
