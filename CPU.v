@@ -58,7 +58,7 @@ wire [10:0] aluCtrl_out_ex;
 wire [4:0] write_register_out_ex;   // Execute stage write_reg_out
 wire [63:0] signExtend_out_ex;
 wire [31:0] pc_out_id;
-
+wire [4:0] reg_loc_a_ex, reg_loc_b_ex;  // EX stage register location for forwarding unit
 // EX/MEM specific datalines
 wire regwrite_out_mem, mem2reg_out_mem, branch_out_mem;
 wire [4:0] write_register_out_mem; // write register passthrough for MEM stage
@@ -135,7 +135,9 @@ ID_PIPE pipe_b(.CLK(clock),
                 // Register data
                 .register_data_a_in(register_data_a),
                 .register_data_b_in(register_data_b),
-
+                // the register locations also get passed through the pipeline
+                .READ_REG_A_IN(register_data_a),
+                .READ_REG_B_IN(register_data_b),
                 // Program counter (for branching)
                 .pc_in(pc_out_id),
                 
@@ -155,6 +157,9 @@ ID_PIPE pipe_b(.CLK(clock),
                 .aluOp_out(aluOp_out_ex),
                 .register_data_a_out(reg_data_a_out_ex),
                 .register_data_b_out(reg_data_b_out_ex),
+                // Forwarding unit passthroughs
+                .READ_REG_A_OUT(reg_loc_a_ex),
+                .READ_REG_B_OUT(reg_loc_b_ex),
                 .pc_out(pc_out_ex),
                 .aluControl_out(aluCtrl_out_ex),
                 .write_register_out(write_register_out_ex),
@@ -222,6 +227,17 @@ stall_unit staller(.Rd_ex(write_register_out_ex),
                    .stall_id(stall),
                    .PC_write(hazard_pc_write));
 
+wire forward_a, forward_b;
+FORWARD_UNIT forwarder(.EX_RN1_IN(reg_loc_a_ex),            // Register location a from EX stage
+                       .EX_RM1_IN(reg_loc_b_ex),            // Register location b from EX stage
+                       .MEM_RD_IN(write_register_out_mem),  // Write reg location from MEM stage
+                       .WB_RD_IN(write_register_out_wb),    // Write reg location from WB stage
+                       .MEM_REGWRITE_IN(regwrite_out_mem),  // control dataline for regwrite in MEM stage
+                       .WB_REGWRITE_IN(regWrite_out_wb),    // control dataline for regwrite in WB stage
+                       // Ouput MUX values
+                       .FORWARD_A(forward_a),
+                       .FORWARD_B(forward_b)
+                    );
 
 always @(*) begin
     // check in third stage EX is ldur or r type
@@ -230,6 +246,8 @@ always @(*) begin
     end else begin
         alusrc_mux <= reg_data_b_out_ex;
     end
+
+    // Forwarding mux A for ALU input A during Code Execute stage
 end
 
 // This mux is for stalling during ldur and stur instructions

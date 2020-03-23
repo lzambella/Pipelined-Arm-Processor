@@ -24,6 +24,9 @@ module ID_PIPE(
     input [31:0] pc_in,
     input [10:0] aluControl_in,
     input [4:0] write_register_in,
+    // For forwarding unit
+    input [4:0] READ_REG_A_IN,
+    input [4:0] READ_REG_B_IN,
     // Outputs
     output reg reg2loc_out,
     output reg aluSrc_out,
@@ -38,7 +41,10 @@ module ID_PIPE(
     output reg [31:0] pc_out,
     output reg [10:0] aluControl_out,
     output reg [4:0]  write_register_out,
-    output reg [63:0] signExtend_out
+    output reg [63:0] signExtend_out,
+    // For forwarding unit
+    output reg [4:0] READ_REG_A_OUT,
+    output reg [4:0] READ_REG_B_OUT
 );
 
 always @( posedge CLK) begin
