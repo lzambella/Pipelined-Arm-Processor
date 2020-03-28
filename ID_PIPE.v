@@ -9,6 +9,8 @@ module ID_PIPE(
     input CLK,  
     input RESET,
     input [31:0] signExtend_in,
+    input [31:0] instr_in,
+
     // Control inputs
 
     input reg2loc_in,
@@ -44,26 +46,32 @@ module ID_PIPE(
     output reg [63:0] signExtend_out,
     // For forwarding unit
     output reg [4:0] READ_REG_A_OUT,
-    output reg [4:0] READ_REG_B_OUT
+    output reg [4:0] READ_REG_B_OUT,
+    output reg [31:0] instr_out
 );
 
 always @( posedge CLK) begin
-        // Pass control unit outputs
-        reg2loc_out <= reg2loc_in;
-        aluSrc_out <= aluSrc_in;
-        memRead_out <= memRead_in;
-        memWrite_out <= memWrite_in;
-        regWrite_out <= regWrite_in;
-        mem2reg_out <= mem2reg_in;
-        branch_out <= branch_in;
-        aluOp_out <= aluOp_in;
-        // pass register data
-        register_data_a_out <= register_data_a_in;
-        register_data_b_out <= register_data_b_in;
-        pc_out <= pc_in;
-        aluControl_out <= aluControl_in;
-        write_register_out <= write_register_in;
-        signExtend_out <= $signed(signExtend_in);
+    // Pass control unit outputs
+    reg2loc_out <= reg2loc_in;
+    aluSrc_out <= aluSrc_in;
+    memRead_out <= memRead_in;
+    memWrite_out <= memWrite_in;
+    regWrite_out <= regWrite_in;
+    mem2reg_out <= mem2reg_in;
+    branch_out <= branch_in;
+    aluOp_out <= aluOp_in;
+    // pass register data
+    register_data_a_out <= register_data_a_in;
+    register_data_b_out <= register_data_b_in;
+    pc_out <= pc_in;
+    aluControl_out <= aluControl_in;
+    write_register_out <= write_register_in;
+    signExtend_out <= $signed(signExtend_in);
+    // For forwarding
+    READ_REG_A_OUT <= READ_REG_A_IN;
+    READ_REG_B_OUT <= READ_REG_B_IN;
+
+    instr_out <= instr_in;
 end
-   
+
 endmodule

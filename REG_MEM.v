@@ -13,6 +13,7 @@ module REG_MEM(
         output reg [63:0] DATA_OUT_A,   // data read from register input a
         output reg [63:0] DATA_OUT_B    // data read from register input b
     );
+
     
         reg [63:0] REGISTER [31:0];      // 32 general purpose registers holding 64 bits each
         // Asyncronous read
@@ -36,15 +37,16 @@ module REG_MEM(
         always @ (posedge CLK) begin
             if (REG_WRITE_ENABLE == 1'b1) begin
                 REGISTER[WRITE_REG] <= WRITE_DATA;
+                $display("Time: %d Register %d value updated to %h", $time, WRITE_REG, WRITE_DATA);
             end
         end
         // lets give some registers initial values
         initial begin
-            //$monitor("Time %d val[0, 1, 2]: %h %h %h", $time, REGISTER[0], REGISTER[1], REGISTER[2]);
+            //$monitor("Time %d val[1, 2, 3]: %h %h %h", $time, REGISTER[1], REGISTER[2], REGISTER[3]);
+            REGISTER[0] = 16'h0000;
             REGISTER[1] = 16'h0000;
             REGISTER[2] = 16'h0000;
             REGISTER[3] = 16'h0000;
             REGISTER[4] = 16'h0000;
-
         end
 endmodule

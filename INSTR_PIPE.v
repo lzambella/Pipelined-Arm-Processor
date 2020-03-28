@@ -10,6 +10,7 @@ module INSTR_PIPE(
     input RESET,
     input [31:0] INSTR_IN,
     input [31:0] COUNTER_IN,
+    input stall_enable,
 
     output reg [31:0] INSTR_OUT,
     output reg [31:0] COUNTER_OUT
@@ -20,9 +21,14 @@ module INSTR_PIPE(
             COUNTER_OUT <= 0;
         end
         else begin
-            // Pass each input
-            INSTR_OUT <= INSTR_IN;
-            COUNTER_OUT <= COUNTER_IN;
+            // Unless there is a stall, operate normally
+            if (stall_enable) begin
+                $display("Time: %d stall operation", $time);
+            end else begin
+                // Pass each input
+                INSTR_OUT <= INSTR_IN;
+                COUNTER_OUT <= COUNTER_IN;
+            end
         end
     end 
 endmodule
