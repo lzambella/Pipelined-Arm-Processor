@@ -18,3 +18,8 @@ This implementation only contains the following LEGv8 instructions:
 | CBZ | `10110100000`|
 
 The ROM file is a verilog file `ROM.v` where the main program can be defined. The default program loads a predefined value from `DATA_MEM[0]` and `DATA_MEM[1]` and stores it into a register where it is added. Data hazards have not been added yet so it performs some ALU operations in the meantime while the data gets safely stored into the register.
+
+#### Update log
+* 3/9/2020 -- Implemented stall unit.
+* 3/23/2020 -- Implemented forwarding unit.
+* 3/28/2020 -- Added forwarding for read register data in the ID stage due to the WB stage not being able to write the data in time it is read again if applicable (Rd.WB == Rn.ID or Rm.ID). Fix STUR error by changing wires as well.
