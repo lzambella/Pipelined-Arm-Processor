@@ -8,17 +8,14 @@ wire memRead;
 wire [63:0] mem_addr_in;
 wire [63:0] write_data_in;
 reg reset;
-
 wire [63:0] mem_data_out;
-wire [63:0] alu_res;
 wire [15:0] instr_addr;
 wire [31:0] output_instr;
 reg [31:0] pc;
 wire [31:0] pc_branch;
 wire pc_src;
 wire [31:0] pc_mux_out; // mux output for pc_src. for branching
-
-wire [31:0] pc_stall;   // for stalling
+wire [31:0] PC_ID;
 wire stall_enable;      // for staling
 
 // Data memory
@@ -37,17 +34,18 @@ ROM program(.address(pc),
 // CPU
 ARM_RISC cpu(.clock(clock),
         .writeback_data(mem_data_out),
-        .instruction(output_instr),
-        .pc(pc),
+        .instr_IF(output_instr),
+        .PC_IF(pc),
         
         .mem_addr_input(mem_addr_in),
-        .write_data_input(write_data_in),
-        .memory_write(memWrite),
-        .memory_read(memRead),
-        .alu_res_debug(alu_res),
+        .Rm_data_MEM(write_data_in),
+        .ctrl_memWrite_MEM(memWrite),
+        .ctrl_memRead_MEM(memRead),
+
         .ctrl_branch_out(pc_src),
-        .branch_pc_out(pc_branch),
-        .hazard_pc_write(stall_enable)
+        .branch_PC_MEM(pc_branch),
+        .PC_stall_ID(stall_enable),
+        .PC_OUT_ID(PC_ID)
         );
 
 always begin
