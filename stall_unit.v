@@ -25,12 +25,10 @@ module stall_unit(
     input wire [4:0] Rd_ex,
     input wire [4:0] Rm_id,
     input wire [4:0] Rn_id,
-    input wire [31:0] PC_id,
     input wire memRead_ex,
 
-    output reg stall_id,
-    output reg [31:0] PC_if,
-    output reg PC_write
+    output reg stall,
+    output reg PC_stall
 );
 
 
@@ -39,16 +37,15 @@ always @(*) begin
     if (memRead_ex == 1'b1) begin
         // Check if there is a hazard
         if (Rd_ex == Rm_id || Rd_ex == Rn_id) begin
-            stall_id <= 1;
-            PC_write <= 1;
-            PC_if <= PC_id;
+            stall <= 1;
+            PC_stall <= 1;
         end else begin
-            stall_id <= 0;
-            PC_write <= 0;
+            stall <= 0;
+            PC_stall <= 0;
         end
     end else begin
-        stall_id <= 0;
-        PC_write <= 0;
+        stall <= 0;
+        PC_stall <= 0;
     end
 end
 endmodule
