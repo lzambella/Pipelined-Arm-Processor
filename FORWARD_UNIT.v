@@ -15,7 +15,7 @@ module FORWARD_UNIT(
     );
     
     always @(*) begin
-    
+        // a input
         if ((WB_REGWRITE_IN == 1'b1) && (WB_RD_IN !== 31) && (WB_RD_IN == EX_RN1_IN)) begin
             FORWARD_A <= 2'b01;    
         end
@@ -26,6 +26,7 @@ module FORWARD_UNIT(
             FORWARD_A <= 2'b00;
         end
         
+        // b input
         if ((WB_REGWRITE_IN == 1'b1) && (WB_RD_IN !== 31) && (WB_RD_IN == EX_RM2_IN)) begin
             FORWARD_B <= 2'b01;   
         end
@@ -36,7 +37,6 @@ module FORWARD_UNIT(
         else begin
             FORWARD_B <= 2'b00;
         end
-    
     end
     
     
