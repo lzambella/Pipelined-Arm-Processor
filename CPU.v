@@ -64,6 +64,7 @@ wire [4:0] Rn_EX, Rm_EX;  // EX stage register location for forwarding unit
 wire ctrl_regWrite_MEM, ctrl_mem2reg_MEM, ctrl_branch_MEM;
 wire [4:0] RD_MEM; // write register passthrough for MEM stage
 wire [63:0] branch_addr_EX;
+wire [31:0] PC_MEM;
 
 wire aluZero_EX, aluZero_MEM; // EX stage pipeline alu zero IO
 wire [63:0] alu_res_EX, alu_res_MEM, branch_addr_out_mem;
@@ -74,6 +75,7 @@ wire ctrl_regWrite_WB, mem2reg_out_wb;
 wire [63:0] memory_write_data_out, alu_res_out_wb;
 wire [4:0] RD_WB; // write register passthrough for MEM stage to WB stage
 wire [63:0] writeback_data_WB; // Data from mux depends either on mem2reg
+wire [31:0] PC_WB;
 
 // Forwarding unit datalines
 wire [1:0] forward_A_MUX_EX, forward_B_MUX_EX;            // MUX inputs
@@ -187,6 +189,7 @@ assign mem_addr_input = alu_res_MEM; // the alu result can point to a memory add
 assign branch_addr_EX = PC_EX + signExtend_EX[23:5];
 assign ctrl_branch_out = ctrl_branch_MEM && aluZero_MEM;
 EX_PIPE pipe_c(.CLK(clock),
+               .PC_IN(PC_EX),
                .RESET(reset),
                .ZERO(aluZero_EX),
                .BRANCH(branch_addr_EX),
@@ -213,11 +216,13 @@ EX_PIPE pipe_c(.CLK(clock),
                .MEMREAD_OUT(ctrl_memRead_MEM),  // goes to external memory unit
                .BRANCH_ZERO_OUT(ctrl_branch_MEM),
                .REG_DESTINATION_OUT(RD_MEM),
-               .INSTR_OUT(instr_mem)
+               .INSTR_OUT(instr_mem),
+               .PC_OUT(PC_MEM)
                );
 // MW/WB
 MEM_PIPE pipe_d(.CLK(clock),
                 .RESET(reset),
+                .PC_IN(PC_MEM),
                 
                 .MEM_DATA(writeback_data), // gets data from mem unit output
                 .ALU_VAL(alu_res_MEM), // from previous stage
@@ -231,7 +236,8 @@ MEM_PIPE pipe_d(.CLK(clock),
                 .REGWRITE_OUT(ctrl_regWrite_WB),
                 .MEM2REG_OUT(mem2reg_out_wb),
                 .ALU_VAL_OUT(alu_res_out_wb),
-                .INSTR_OUT(instr_wb)
+                .INSTR_OUT(instr_wb),
+                .PC_OUT(PC_WB)
                 );
 
 

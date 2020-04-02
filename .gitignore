@@ -10,4 +10,5 @@
 synthesis.ys
 *.bat
 *.pdf
+*.gtkw
 pipeline_testbench.v

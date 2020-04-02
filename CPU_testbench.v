@@ -18,6 +18,7 @@ wire [31:0] pc_mux_out; // mux output for pc_src. for branching
 wire [31:0] PC_ID;
 wire stall_enable;      // for staling
 
+reg [31:0] clock_cycles;
 // Data memory
 DATA_MEM memory(.CLK(clock),
                 .MEM_WRITE(memWrite),
@@ -52,6 +53,10 @@ always begin
     // 20 ns clock cycle
     #10
     clock = ~clock;
+    if (clock == 1) begin
+        clock_cycles = clock_cycles + 1;
+        $display("-----Clock Cycle: %d-----", clock_cycles);
+    end
 end
 
 always @ (posedge clock) begin
@@ -67,7 +72,9 @@ always @ (posedge clock) begin
 end
 initial begin
     $dumpvars(0);
+    $display("-----Clock Cycle 0-----");
     clock = 0;
+    clock_cycles = 0;
     pc = 0;
     #1000
     $display("time: %d Finish sim", $time);

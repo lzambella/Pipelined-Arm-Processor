@@ -48,5 +48,7 @@ module REG_MEM(
             REGISTER[2] = 16'h0000;
             REGISTER[3] = 16'h0000;
             REGISTER[4] = 16'h0000;
+            
+            REGISTER[5] = 16'h0005;
         end
 endmodule

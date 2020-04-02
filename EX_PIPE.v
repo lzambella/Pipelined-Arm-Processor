@@ -19,6 +19,7 @@ module EX_PIPE(
     input BRANCH_ZERO_IN,
     input MEMREAD_IN,
     input [31:0] INSTR_IN,
+    input [31:0] PC_IN,
 
     output reg [63:0] BRANCH_OUT, RT_READ_OUT, ALU_VAL_OUT,
     output reg [4:0] REG_DESTINATION_OUT,
@@ -29,7 +30,8 @@ module EX_PIPE(
     output reg MEMWRITE_OUT,
     output reg BRANCH_ZERO_OUT,
     output reg MEMREAD_OUT,
-    output reg [31:0] INSTR_OUT
+    output reg [31:0] INSTR_OUT,
+    output reg [31:0] PC_OUT
 );
 
   always @( posedge CLK) begin
@@ -45,6 +47,7 @@ module EX_PIPE(
             MEMWRITE_OUT <= MEMWRITE_IN;
             BRANCH_ZERO_OUT <= BRANCH_ZERO_IN;
             INSTR_OUT <= INSTR_IN;
+            PC_OUT <= PC_IN;
 end
 
 endmodule
